@@ -1,0 +1,20 @@
+{
+  "name": "@simple/contextualize",
+  "type": "module",
+  "module": "index.ts",
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^5.4.1",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@types/bun": "latest",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^9.36.0",
+    "eslint-plugin-format": "^1.0.1",
+    "lint-staged": "^16.2.4",
+    "simple-git-hooks": "^2.13.1"
+  }
+}
