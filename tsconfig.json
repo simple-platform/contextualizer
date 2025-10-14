@@ -1,29 +1,61 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
-    "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "Preserve",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
+    // --- Environment & Modules ---
+    "lib": [
+      "ESNext"
+    ],
 
-    // Bundler mode
+    // eslint-disable-next-line jsonc/sort-keys
+    "target": "ESNext",
+
+    // eslint-disable-next-line jsonc/sort-keys
+    "module": "ESNext", // Using ESNext is standard for modern Node/Bun CLIs
+
+    "moduleDetection": "force",
+
+    // eslint-disable-next-line jsonc/sort-keys
+    "allowJs": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+
+    // eslint-disable-next-line jsonc/sort-keys
     "verbatimModuleSyntax": true,
+
+    // eslint-disable-next-line jsonc/sort-keys
     "noEmit": true,
 
-    // Best practices
+    // --- Strictness & Best Practices ---
     "strict": true,
+
+    // eslint-disable-next-line jsonc/sort-keys
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
+
+    // eslint-disable-next-line jsonc/sort-keys
     "noUncheckedIndexedAccess": true,
+
     "noImplicitOverride": true,
 
-    // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    // --- Developer Experience Enhancements ---
+    // eslint-disable-next-line jsonc/sort-keys
+    "baseUrl": ".",
+
+    // eslint-disable-next-line jsonc/sort-keys
+    "paths": {
+      "@/*": [
+        "src/*"
+      ] // Allows clean imports like '@/config/loader'
+    },
+
+    // --- Bun-specific types ---
+
+    // eslint-disable-next-line jsonc/sort-keys
+    "types": [
+      "bun"
+    ]
+  },
+
+  "include": [
+    "src"
+  ]
 }

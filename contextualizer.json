@@ -1,0 +1,20 @@
+{
+  "outputDir": ".context",
+  "topLevelDirs": [
+    "src",
+    "scripts"
+  ],
+  "ignoreDirs": [
+    "node_modules",
+    "**/dist",
+    ".git"
+  ],
+  "ignoreFiles": [
+    "bun.lockb",
+    "README.md"
+  ],
+  "ignoreExtensions": [
+    "*.log",
+    "*.svg"
+  ]
+}
