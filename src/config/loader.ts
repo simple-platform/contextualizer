@@ -5,10 +5,35 @@ import type { ContextualizerConfig } from './types'
 
 const CONFIG_FILE_NAME = 'contextualizer.json'
 
+// A single, comprehensive list of default ignore patterns that behaves like a .gitignore.
+// Note the trailing slashes on directory patterns.
 const DEFAULT_CONFIG: Readonly<ContextualizerConfig> = {
-  ignoreDirs: ['node_modules', 'dist', 'build', '.git', '.vscode', '.idea'],
-  ignoreExtensions: ['*.log', '*.env', '*.svg', '*.png', '*.jpg', '*.jpeg', '*.gif'],
-  ignoreFiles: ['package-lock.json', 'yarn.lock', 'bun.lockb'],
+  ignore: [
+    // Directories
+    'node_modules/',
+    'dist/',
+    'build/',
+    'coverage/',
+    '.git/',
+    '.vscode/',
+    '.idea/',
+    '__pycache__/',
+
+    // Files
+    'package-lock.json',
+    'yarn.lock',
+    'bun.lockb',
+    '.DS_Store',
+
+    // Extensions / Globs
+    '*.log',
+    '*.env',
+    '*.svg',
+    '*.png',
+    '*.jpg',
+    '*.jpeg',
+    '*.gif',
+  ],
   outputDir: '.context',
   topLevelDirs: ['apps', 'packages', 'src'],
 }
@@ -25,7 +50,6 @@ const DEFAULT_CONFIG: Readonly<ContextualizerConfig> = {
 export async function loadConfig(): Promise<ContextualizerConfig> {
   // eslint-disable-next-line node/prefer-global/process
   const configPath = path.join(process.cwd(), CONFIG_FILE_NAME)
-
   let userConfig: Partial<ContextualizerConfig> = {}
 
   try {
@@ -33,10 +57,12 @@ export async function loadConfig(): Promise<ContextualizerConfig> {
     userConfig = JSON.parse(fileContent)
   }
   catch (error: any) {
-    // If the file doesn't exist, we can safely proceed with defaults.
-    // This is not an error condition.
     if (error.code === 'ENOENT') {
-      return { ...DEFAULT_CONFIG }
+      // If the file doesn't exist, it's not an error.
+      // We'll proceed with the defaults, making sure to ignore the output dir.
+      const finalConfig = { ...DEFAULT_CONFIG }
+      finalConfig.ignore.push(`${finalConfig.outputDir}/`)
+      return finalConfig
     }
 
     // However, if the file exists and is unreadable or contains invalid JSON,
@@ -49,20 +75,20 @@ export async function loadConfig(): Promise<ContextualizerConfig> {
     process.exit(1)
   }
 
-  // Merge user config with defaults. The user's values take precedence.
+  // Merge user config with defaults.
   const mergedConfig: ContextualizerConfig = {
     ...DEFAULT_CONFIG,
     ...userConfig,
 
-    // Ensure arrays are properly merged if user provides them
-    ignoreDirs: userConfig.ignoreDirs ?? DEFAULT_CONFIG.ignoreDirs,
-    ignoreExtensions: userConfig.ignoreExtensions ?? DEFAULT_CONFIG.ignoreExtensions,
-    ignoreFiles: userConfig.ignoreFiles ?? DEFAULT_CONFIG.ignoreFiles,
+    // If the user provides an 'ignore' array, it REPLACES the default one.
+    // This gives them full control, which is the expected behavior.
+    ignore: userConfig.ignore ?? DEFAULT_CONFIG.ignore,
   }
 
   // Important: Always ensure the output directory itself is ignored.
-  if (!mergedConfig.ignoreDirs.includes(mergedConfig.outputDir)) {
-    mergedConfig.ignoreDirs.push(mergedConfig.outputDir)
+  const outputDirPattern = `${mergedConfig.outputDir}/`
+  if (!mergedConfig.ignore.includes(outputDirPattern)) {
+    mergedConfig.ignore.push(outputDirPattern)
   }
 
   return mergedConfig

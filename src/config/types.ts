@@ -1,7 +1,5 @@
 export interface ContextualizerConfig {
-  ignoreDirs: string[]
-  ignoreExtensions: string[]
-  ignoreFiles: string[]
+  ignore: string[]
   outputDir: string
   topLevelDirs: string[]
 }
