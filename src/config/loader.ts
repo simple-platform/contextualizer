@@ -7,34 +7,38 @@ const CONFIG_FILE_NAME = 'contextualizer.json'
 
 // A single, comprehensive list of default ignore patterns that behaves like a .gitignore.
 // Note the trailing slashes on directory patterns.
-const DEFAULT_CONFIG: Readonly<ContextualizerConfig> = {
-  ignore: [
-    // Directories
-    'node_modules/',
-    'dist/',
-    'build/',
-    'coverage/',
-    '.git/',
-    '.vscode/',
-    '.idea/',
-    '__pycache__/',
+const DEFAULT_IGNORE_PATTERNS: Readonly<string[]> = [
+  // Directories
+  'node_modules/',
+  'dist/',
+  'build/',
+  'coverage/',
+  '.git/',
+  '.vscode/',
+  '.idea/',
+  '__pycache__/',
 
-    // Files
-    'package-lock.json',
-    'yarn.lock',
-    'bun.lockb',
-    '.DS_Store',
+  // Files
+  'package-lock.json',
+  'yarn.lock',
+  'bun.lockb',
+  '.DS_Store',
 
-    // Extensions / Globs
-    '*.log',
-    '*.env',
-    '*.svg',
-    '*.png',
-    '*.jpg',
-    '*.jpeg',
-    '*.gif',
-  ],
+  // Extensions / Globs
+  '*.log',
+  '*.env',
+  '*.svg',
+  '*.png',
+  '*.jpg',
+  '*.jpeg',
+  '*.gif',
+]
+
+const DEFAULT_CONFIG_OPTIONS: Readonly<Omit<ContextualizerConfig, 'ignore'>> = {
+  openOutputDirectory: true,
   outputDir: '.context',
+  processTopLevelDirs: false,
+  promptPageSize: 10,
   topLevelDirs: ['apps', 'packages', 'src'],
 }
 
@@ -60,7 +64,11 @@ export async function loadConfig(): Promise<ContextualizerConfig> {
     if (error.code === 'ENOENT') {
       // If the file doesn't exist, it's not an error.
       // We'll proceed with the defaults, making sure to ignore the output dir.
-      const finalConfig = { ...DEFAULT_CONFIG }
+      const finalConfig = {
+        ...DEFAULT_CONFIG_OPTIONS,
+        ignore: [...DEFAULT_IGNORE_PATTERNS],
+      }
+
       finalConfig.ignore.push(`${finalConfig.outputDir}/`)
       return finalConfig
     }
@@ -77,12 +85,12 @@ export async function loadConfig(): Promise<ContextualizerConfig> {
 
   // Merge user config with defaults.
   const mergedConfig: ContextualizerConfig = {
-    ...DEFAULT_CONFIG,
+    ...DEFAULT_CONFIG_OPTIONS,
     ...userConfig,
 
     // If the user provides an 'ignore' array, it REPLACES the default one.
     // This gives them full control, which is the expected behavior.
-    ignore: userConfig.ignore ?? DEFAULT_CONFIG.ignore,
+    ignore: userConfig.ignore ?? [...DEFAULT_IGNORE_PATTERNS],
   }
 
   // Important: Always ensure the output directory itself is ignored.

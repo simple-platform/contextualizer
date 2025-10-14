@@ -1,54 +1,79 @@
-/* eslint-disable no-console */
+#!/usr/bin/env bun
+
+import chalk from 'chalk'
+import { Command } from 'commander'
 import path from 'node:path'
 
 import { loadConfig } from '@/config/loader'
 import { processDirectory } from '@/core/fileProcessor'
+import { showCompletionMessage, showWelcomeMessage, startProcessingSpinner } from '@/ui/display'
+import { promptForSubDirectories } from '@/ui/prompts'
+import { writeOutput } from '@/utils/fileSystem'
+import { openDirectory } from '@/utils/system'
 
 async function main() {
-  console.log('Loading configuration...')
+  // Dynamically import package.json to get version and description
+  const { description, version } = await import('../package.json')
+
+  const program = new Command()
+
+  program
+    .version(version)
+    .description(description)
+    .action(runContextualizer)
+    // eslint-disable-next-line node/prefer-global/process
+    .parse(process.argv)
+}
+
+async function runContextualizer() {
+  showWelcomeMessage()
+
   const config = await loadConfig()
 
   // eslint-disable-next-line node/prefer-global/process
   const projectRoot = process.cwd()
 
-  console.log('Configuration loaded successfully.')
-  console.log('Starting directory processing...\n')
+  const selectedSubDirs = await promptForSubDirectories(config)
 
-  // For testing, we'll process the first available directory from the config.
-  const dirToProcess = config.topLevelDirs[0]
-  if (!dirToProcess) {
-    console.error('❌ No directories specified in `topLevelDirs` in your configuration.')
+  // Use a Set to ensure we don't process the same directory twice
+  const dirsToProcess = new Set<string>(selectedSubDirs)
 
-    // eslint-disable-next-line node/prefer-global/process
-    process.exit(1)
+  // If the config flag is set, add the top-level directories themselves to the set
+  if (config.processTopLevelDirs) {
+    config.topLevelDirs.forEach(dir => dirsToProcess.add(dir))
   }
 
-  const fullPath = path.join(projectRoot, dirToProcess)
+  const finalDirs = Array.from(dirsToProcess)
 
-  try {
-    const combinedContent = await processDirectory(fullPath, config, projectRoot)
-
-    console.log('--- BEGIN PROCESSED CONTENT ---')
-    console.log(combinedContent)
-    console.log('--- END PROCESSED CONTENT ---')
-    console.log('\n✅ Processing complete.')
+  if (finalDirs.length === 0) {
+    // eslint-disable-next-line no-console
+    console.log(chalk.yellow('No directories selected. Exiting.'))
+    return
   }
-  catch (error: any) {
-    // Handle cases where the top-level directory itself doesn't exist.
-    if (error.code === 'ENOENT') {
-      console.error(`❌ Error: The directory "${dirToProcess}" does not exist.`)
-    }
-    else {
-      console.error('An unexpected error occurred during processing:', error)
-    }
 
-    // eslint-disable-next-line node/prefer-global/process
-    process.exit(1)
+  for (const dirPath of finalDirs) {
+    const spinner = startProcessingSpinner(dirPath)
+
+    try {
+      const content = await processDirectory(dirPath, config, projectRoot)
+      await writeOutput(config.outputDir, dirPath, content)
+      spinner.succeed(chalk.green(`Created context for ${chalk.bold(path.basename(dirPath))}`))
+    }
+    catch (error) {
+      spinner.fail(chalk.red(`Failed to process ${chalk.bold(path.basename(dirPath))}`))
+      console.error(error)
+    }
+  }
+
+  showCompletionMessage()
+
+  if (config.openOutputDirectory) {
+    openDirectory(config.outputDir)
   }
 }
 
 main().catch((error) => {
-  console.error('A critical error occurred:', error)
+  console.error(chalk.red('\nAn unexpected error occurred:'), error)
 
   // eslint-disable-next-line node/prefer-global/process
   process.exit(1)
