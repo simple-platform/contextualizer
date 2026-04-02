@@ -5,9 +5,29 @@ import path from 'node:path'
 
 import type { ContextualizerConfig } from '@/config/types'
 
+/**
+ * Prompts the user to select the directories they want to process.
+ * @param config The full application configuration.
+ * @returns A promise that resolves to an array of selected directory paths.
+ */
+export type OutputMode = 'multiple' | 'single'
+
 interface DirectoryChoice {
   name: string
   value: string // The full path to the directory
+}
+
+export async function promptForOutputMode(): Promise<OutputMode> {
+  const { mode } = await inquirer.prompt<{ mode: OutputMode }>([
+    {
+      choices: ['multiple', 'single'],
+      message: 'Select output mode:',
+      name: 'mode',
+      type: 'list',
+    },
+  ])
+
+  return mode
 }
 
 /**
@@ -16,8 +36,14 @@ interface DirectoryChoice {
  * @returns A promise that resolves to an array of selected directory paths.
  */
 export async function promptForSubDirectories(config: ContextualizerConfig): Promise<string[]> {
-  const choicesByCategory = await getDirectoryChoices(config.topLevelDirs)
+  const fetchedChoices = await getDirectoryChoices(config.topLevelDirs)
   const allSelectedDirs: string[] = []
+
+  // Add "Uncommitted Changes" as its own category at the beginning
+  const choicesByCategory = new Map<string, DirectoryChoice[]>([
+    ['Uncommitted Changes', [{ name: 'All uncommitted changes', value: '__UNCOMMITTED_CHANGES__' }]],
+    ...fetchedChoices,
+  ])
 
   if (choicesByCategory.size === 0) {
     return []
